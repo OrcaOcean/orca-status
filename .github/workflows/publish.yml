@@ -1,0 +1,45 @@
+# Publishes docs/ to the `pages` branch, which GitHub Pages serves, and records a check of the
+# production services in data/history.json there. `main` only holds the source.
+name: Publish status page
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: publish-status-page
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check out the published branch
+        run: |
+          if git fetch --depth 1 origin pages; then
+            git worktree add -B pages site FETCH_HEAD
+          else
+            git worktree add --orphan -b pages site
+          fi
+      - name: Replace the site files and keep the recorded history
+        run: |
+          cp site/data/history.json "$RUNNER_TEMP/history.json" 2>/dev/null || cp scripts/history.seed.json "$RUNNER_TEMP/history.json"
+          git -C site rm -rqf --ignore-unmatch .
+          cp -R docs/. site/
+          mkdir -p site/data
+          cp "$RUNNER_TEMP/history.json" site/data/history.json
+      - name: Check the production services
+        run: node scripts/collect.mjs site/data/history.json
+      - name: Publish
+        working-directory: site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Record status check"
+          git push origin pages

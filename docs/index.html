@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https://app.withorca.com https://api.withorca.com https://imap.withorca.com; base-uri 'none'; form-action 'none'" />
+    <title>Orca Status</title>
+    <meta name="description" content="Live status of Orca, its uptime history and the latest updates." />
+    <meta property="og:title" content="Orca Status" />
+    <meta property="og:description" content="Live status of Orca, its uptime history and the latest updates." />
+    <link rel="icon" href="favicon.ico" />
+    <link rel="stylesheet" href="status.css" />
+    <script type="module" src="status.js"></script>
+  </head>
+  <body>
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="icon-ok" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="11" fill="currentColor" />
+        <path d="m7 12.5 3.3 3.3L17 9" fill="none" stroke="var(--icon-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="icon-warning" viewBox="0 0 24 24">
+        <path d="M12 2.2c.8 0 1.5.4 1.9 1.1l8.5 14.9c.8 1.4-.2 3.1-1.9 3.1h-17c-1.7 0-2.7-1.7-1.9-3.1l8.5-14.9c.4-.7 1.1-1.1 1.9-1.1Z" fill="currentColor" />
+        <path d="M12 9v5" fill="none" stroke="var(--icon-ink)" stroke-width="2.2" stroke-linecap="round" />
+        <circle cx="12" cy="17.4" r="1.3" fill="var(--icon-ink)" />
+      </symbol>
+      <symbol id="icon-down" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="11" fill="currentColor" />
+        <path d="m8 8 8 8m0-8-8 8" fill="none" stroke="var(--icon-ink)" stroke-width="2.2" stroke-linecap="round" />
+      </symbol>
+      <symbol id="icon-unknown" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="11" fill="currentColor" />
+        <path d="M7.5 12h9" fill="none" stroke="var(--icon-ink)" stroke-width="2.2" stroke-linecap="round" />
+      </symbol>
+      <symbol id="icon-checking" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="3" stroke-opacity="0.25" />
+        <path d="M12 2.5a9.5 9.5 0 0 1 9.5 9.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+      </symbol>
+    </svg>
+
+    <div class="page">
+      <header class="top">
+        <a class="brand" href="https://www.withorca.com" aria-label="Orca">
+          <svg class="logotype" viewBox="0 0 119 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M10.5625 14.1439C9.0125 15.7039 6.5125 15.7039 4.9625 14.1439C3.4125 12.5839 3.4125 10.0539 4.9625 8.49389C5.3325 8.11389 5.7625 7.83389 6.2225 7.64389L6.2625 7.62388C7.6925 7.03388 9.4025 7.32389 10.5625 8.49389C12.1125 10.0539 12.1125 12.5839 10.5625 14.1439ZM13.2625 5.77389C12.6225 5.13389 11.9125 4.62389 11.1425 4.25389C11.1425 4.25389 9.3025 3.36388 9.9525 2.40388L10.8825 1.08388C11.0725 0.813884 11.0425 0.443887 10.8025 0.203887C10.5625 -0.0361134 10.1925 -0.0661153 9.9325 0.123885L3.4125 4.80388C3.0025 5.08388 2.6325 5.41389 2.2725 5.78389C-0.7575 8.84389 -0.7575 13.8139 2.2725 16.8739C5.3025 19.9339 10.2225 19.9339 13.2625 16.8739C16.2925 13.8139 16.2925 8.84389 13.2625 5.78389V5.77389Z"/>
+            <path d="M43.3425 10.4239H40.2225V7.18389H43.3425C44.3925 7.18389 45.2425 7.75389 45.2425 8.79389C45.2425 9.83389 44.3925 10.4239 43.3425 10.4239ZM49.3225 18.8939L46.2025 13.3439C47.6425 12.8439 49.2525 11.4439 49.2525 8.81389C49.2525 6.00389 47.3225 3.78389 43.9325 3.78389H36.2725V18.8839H40.2125V13.8139H42.2325L44.8025 18.8839H49.3225V18.8939Z"/>
+            <path d="M77.2825 19.1639C80.9725 19.1639 82.9725 17.0339 83.9525 15.1139L80.5625 13.5339C80.0625 14.7339 78.7525 15.7339 77.2825 15.7339C74.7825 15.7339 73.0125 13.8339 73.0125 11.3639C73.0125 8.89389 74.7825 6.99389 77.2825 6.99389C78.7525 6.99389 80.0525 7.99389 80.5625 9.19389L83.9525 7.58389C82.9625 5.61389 80.9725 3.55389 77.2825 3.55389C72.5825 3.55389 69.0025 6.70389 69.0025 11.3639C69.0025 16.0239 72.5825 19.1739 77.2825 19.1739V19.1639Z"/>
+            <path d="M112.383 13.3239H108.503L110.452 7.64389L112.383 13.3239ZM118.693 18.8939L112.932 3.79389H107.952L102.193 18.8939H106.663L107.423 16.7239H113.452L114.212 18.8939H118.693Z"/>
+          </svg>
+          <span class="brand-suffix">Status</span>
+        </a>
+        <a class="button" href="https://app.withorca.com">Open Orca</a>
+      </header>
+
+      <main>
+        <section class="hero" id="overall" data-state="checking">
+          <svg class="hero-icon" aria-hidden="true"><use id="overall-icon" href="#icon-checking" /></svg>
+          <div>
+            <h1 id="overall-title" aria-live="polite">Checking Orca…</h1>
+            <p id="overall-detail">Contacting the services from your browser.</p>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="services-title">
+          <div class="card-head">
+            <h2 id="services-title">Services</h2>
+            <p class="card-note" id="history-range"></p>
+          </div>
+          <ul class="services" id="services"></ul>
+          <ul class="legend" id="legend" hidden>
+            <li><span class="swatch" data-status="ok"></span>No problems</li>
+            <li><span class="swatch" data-status="minor"></span>Brief disruption</li>
+            <li><span class="swatch" data-status="major"></span>Disruption</li>
+            <li><span class="swatch" data-status="none"></span>No data</li>
+          </ul>
+        </section>
+
+        <div class="columns">
+          <section class="card" aria-labelledby="release-title" id="release" hidden>
+            <h2 id="release-title">Latest update</h2>
+            <p class="figure" id="release-date"></p>
+            <p class="figure-note" id="release-note"></p>
+            <h3 class="list-title" id="releases-title" hidden>Earlier updates</h3>
+            <ol class="releases" id="releases" aria-labelledby="releases-title"></ol>
+          </section>
+
+          <section class="card" aria-labelledby="browsers-title" id="browsers-card" hidden>
+            <h2 id="browsers-title">Supported browsers</h2>
+            <p class="card-text">Orca works in the current versions of these browsers.</p>
+            <ul class="browsers" id="browsers"></ul>
+          </section>
+        </div>
+
+        <section class="card" aria-labelledby="disruptions-title" id="disruptions-card" hidden>
+          <h2 id="disruptions-title">Past disruptions</h2>
+          <ul class="disruptions" id="disruptions"></ul>
+          <p class="card-text" id="disruptions-empty" hidden></p>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>
+          Something not working that isn't shown here? Write to
+          <a href="mailto:support@withorca.com">support@withorca.com</a> or visit the
+          <a href="https://support.withorca.com/">help centre</a>.
+        </p>
+        <p class="footer-note">
+          The status at the top is checked from your browser every minute. The history comes from an automated check that
+          runs every 30 minutes.
+        </p>
+      </footer>
+    </div>
+
+    <div class="tooltip" id="tooltip" role="status" hidden>
+      <p class="tooltip-title" id="tooltip-title"></p>
+      <p class="tooltip-value" id="tooltip-value"></p>
+      <p class="tooltip-detail" id="tooltip-detail"></p>
+    </div>
+
+    <noscript><p class="noscript">This page needs JavaScript to check the status of Orca.</p></noscript>
+  </body>
+</html>
