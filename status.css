@@ -337,6 +337,14 @@ h3 {
   color: var(--major);
 }
 
+.pill[data-state='blocked'] {
+  background: var(--minor-wash);
+}
+
+.pill[data-state='blocked'] .pill-icon {
+  color: var(--minor);
+}
+
 .uptime {
   display: flex;
   gap: 2px;

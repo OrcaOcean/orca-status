@@ -2,6 +2,8 @@ import { HISTORY_DAYS, SERVICES, browserReleaseKey, dayStatus, lastDayKeys, prob
 
 const RECHECK_MS = 60_000
 const HISTORY_RELOAD_MS = 15 * 60_000
+// Scheduled checks run every 30 minutes and GitHub often starts them a few minutes late.
+const LAST_CHECK_MAX_AGE_MS = 60 * 60_000
 const SHOWN_EARLIER_RELEASES = 5
 const DAY_MS = 86_400_000
 
@@ -44,6 +46,7 @@ const shortUtcDate = new Intl.DateTimeFormat('en-GB', {
 })
 const clock = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 const relativeTime = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+const list = new Intl.ListFormat('en-GB', { type: 'conjunction' })
 
 const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
 
@@ -56,6 +59,7 @@ const SERVICE_STATES = {
   checking: { icon: 'checking', label: 'Checking' },
   ok: { icon: 'ok', label: 'Operational' },
   down: { icon: 'down', label: 'Not responding' },
+  blocked: { icon: 'warning', label: 'Not reachable here' },
   unknown: { icon: 'unknown', label: 'Unknown' },
 }
 
@@ -324,9 +328,29 @@ const check = async () => {
       return
     }
 
-    SERVICES.forEach((service, index) => setServiceState(service.id, results[index].ok ? 'ok' : 'down'))
+    if (failed.length > 0) {
+      await loadHistory()
+    }
+    const automatedCheckAt = new Date(history?.updatedAt)
+    const isLastCheckRecent = Date.now() - automatedCheckAt.getTime() < LAST_CHECK_MAX_AGE_MS
+    const blocked = failed.filter((service) => isLastCheckRecent && history.lastCheck?.[service.id] === true)
 
-    if (failed.length === 0) {
+    SERVICES.forEach((service, index) =>
+      setServiceState(service.id, results[index].ok ? 'ok' : blocked.includes(service) ? 'blocked' : 'down'),
+    )
+
+    if (failed.length > 0 && blocked.length === failed.length) {
+      const hosts = list.format(blocked.map((service) => new URL(service.urls.production).host))
+      const advice = `A VPN, firewall or proxy is probably blocking ${hosts}. Ask your IT team to allow ${blocked.length === 1 ? 'it' : 'them'}.`
+      setOverall(
+        'partial',
+        'warning',
+        blocked.length === SERVICES.length ? "Your network can't reach Orca" : "Your network can't reach part of Orca",
+        blocked.length === SERVICES.length
+          ? `Our automated check reached Orca at ${clock.format(automatedCheckAt)}, but your browser got no response at ${time}. ${advice}`
+          : `${list.format(blocked.map((service) => service.name))} worked in our automated check at ${clock.format(automatedCheckAt)}, but didn't respond to your browser at ${time}. ${advice}`,
+      )
+    } else if (failed.length === 0) {
       setOverall('ok', 'ok', 'All systems operational', `Checked from your browser at ${time}. Updates every minute.`)
     } else if (failed.length === SERVICES.length) {
       setOverall(
@@ -336,7 +360,7 @@ const check = async () => {
         `None of the services responded at ${time}. If other websites work for you, the problem is on our side.`,
       )
     } else {
-      const names = new Intl.ListFormat('en', { type: 'conjunction' }).format(failed.map((service) => service.name))
+      const names = list.format(failed.map((service) => service.name))
       setOverall(
         'partial',
         'warning',
