@@ -76,3 +76,5 @@ export const dayStatus = (entry) => {
   }
   return failed / checks <= 0.05 ? 'minor' : 'major'
 }
+
+export const browserReleaseKey = (name, version) => `${name} ${version}`
