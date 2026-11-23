@@ -1,11 +1,15 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { HISTORY_DAYS, SERVICES, dayKey, lastDayKeys, probe } from '../docs/lib.js'
+import { HISTORY_DAYS, SERVICES, browserReleaseKey, dayKey, lastDayKeys, probe } from '../docs/lib.js'
 
 const HISTORY_FILE = process.argv[2]
 if (HISTORY_FILE === undefined) {
   throw new Error('Usage: node scripts/collect.mjs <path to history.json>')
 }
 const MAX_RELEASES = 50
+
+// Brave follows Chromium's version numbers. Electron isn't shown on the page.
+const RELEASE_DATA_BROWSERS = { Chrome: 'chrome', Edge: 'edge', Brave: 'chrome', Safari: 'safari', Firefox: 'firefox' }
+const RELEASE_DATA_URL = 'https://raw.githubusercontent.com/mdn/browser-compat-data/main/browsers'
 
 const now = new Date()
 const history = JSON.parse(await readFile(HISTORY_FILE, 'utf8'))
@@ -38,6 +42,40 @@ const releases = (
   isNewRelease ? [{ id: liveReleaseId, at: now.toISOString() }, ...history.releases] : history.releases
 ).slice(0, MAX_RELEASES)
 
+const browserReleaseDates = async (browsers, known) => {
+  const dates = {}
+  const releasesByBrowser = new Map()
+  for (const [name, version] of Object.entries(browsers ?? {})) {
+    const key = browserReleaseKey(name, version)
+    const dataName = RELEASE_DATA_BROWSERS[name]
+    if (known[key] !== undefined) {
+      dates[key] = known[key]
+    } else if (dataName !== undefined) {
+      try {
+        if (!releasesByBrowser.has(dataName)) {
+          const response = await fetch(`${RELEASE_DATA_URL}/${dataName}.json`)
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`)
+          }
+          releasesByBrowser.set(dataName, (await response.json()).browsers[dataName].releases)
+        }
+        const releasedOn = releasesByBrowser.get(dataName)[String(version)]?.release_date
+        if (releasedOn !== undefined) {
+          dates[key] = releasedOn
+        }
+      } catch (error) {
+        console.log(`No release date for ${key}: ${error.message}`)
+      }
+    }
+  }
+  return dates
+}
+
+const appBrowsers = results.find(({ service }) => service.id === 'app')?.result.version?.browsers
+const browserReleases = appBrowsers
+  ? await browserReleaseDates(appBrowsers, history.browserReleases ?? {})
+  : (history.browserReleases ?? {})
+
 const lines = [
   '{',
   `  "updatedAt": ${JSON.stringify(now.toISOString())},`,
@@ -48,7 +86,8 @@ const lines = [
   '  },',
   '  "releases": [',
   releases.map((release) => `    ${JSON.stringify(release)}`).join(',\n'),
-  '  ]',
+  '  ],',
+  `  "browserReleases": ${JSON.stringify(browserReleases)}`,
   '}',
 ]
 await writeFile(HISTORY_FILE, `${lines.join('\n')}\n`)

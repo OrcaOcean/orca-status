@@ -1,4 +1,4 @@
-import { HISTORY_DAYS, SERVICES, dayStatus, lastDayKeys, probe } from './lib.js'
+import { HISTORY_DAYS, SERVICES, browserReleaseKey, dayStatus, lastDayKeys, probe } from './lib.js'
 
 const RECHECK_MS = 60_000
 const HISTORY_RELOAD_MS = 15 * 60_000
@@ -36,6 +36,12 @@ const longUtcDate = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'UTC',
 })
 const shortDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+const shortUtcDate = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
 const clock = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 const relativeTime = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 
@@ -276,7 +282,7 @@ const renderRelease = (history, appVersion) => {
   byId('release').hidden = false
 }
 
-const renderBrowsers = (appVersion) => {
+const renderBrowsers = (history, appVersion) => {
   const browsers = Object.entries(appVersion?.browsers ?? {}).filter(([name]) => name !== 'Electron')
   if (browsers.length === 0) {
     return
@@ -284,7 +290,12 @@ const renderBrowsers = (appVersion) => {
   byId('browsers').replaceChildren(
     ...browsers.map(([name, version]) => {
       const item = el('li')
-      item.append(el('span', '', name), el('span', 'row-secondary', `${version} or newer`))
+      const minimum = el('span', 'row-secondary', `${version} or newer`)
+      const releasedOn = history?.browserReleases?.[browserReleaseKey(name, version)]
+      if (releasedOn !== undefined) {
+        minimum.append(el('span', 'row-detail', `released ${shortUtcDate.format(new Date(releasedOn))}`))
+      }
+      item.append(el('span', '', name), minimum)
       return item
     }),
   )
@@ -337,7 +348,7 @@ const check = async () => {
     const appResult = results[SERVICES.findIndex((service) => service.id === 'app')]
     if (appResult.ok) {
       appVersion = appResult.version
-      renderBrowsers(appVersion)
+      renderBrowsers(history, appVersion)
       renderRelease(history, appVersion)
     }
   } finally {
@@ -354,6 +365,7 @@ const loadHistory = async () => {
     history = await response.json()
     renderHistory(history)
     renderRelease(history, appVersion)
+    renderBrowsers(history, appVersion)
   } catch {
     // The live status still works without the recorded history.
   }
