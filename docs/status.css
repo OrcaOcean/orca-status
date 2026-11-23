@@ -483,6 +483,11 @@ h3 {
   text-align: right;
 }
 
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.93em;
+}
+
 .row-detail {
   display: block;
   font-size: 13px;

@@ -36,10 +36,12 @@ const days = Object.fromEntries(
     .sort(([a], [b]) => a.localeCompare(b)),
 )
 
-const liveReleaseId = results.find(({ service }) => service.id === 'app')?.result.version?.workflowId
-const isNewRelease = liveReleaseId !== undefined && liveReleaseId !== history.releases[0]?.id
+const liveVersion = results.find(({ service }) => service.id === 'app')?.result.version
+const isNewRelease = liveVersion !== undefined && liveVersion.workflowId !== history.releases[0]?.id
 const releases = (
-  isNewRelease ? [{ id: liveReleaseId, at: now.toISOString() }, ...history.releases] : history.releases
+  isNewRelease
+    ? [{ id: liveVersion.workflowId, commit: liveVersion.commit.hash, at: now.toISOString() }, ...history.releases]
+    : history.releases
 ).slice(0, MAX_RELEASES)
 
 const browserReleaseDates = async (browsers, known) => {
@@ -71,9 +73,8 @@ const browserReleaseDates = async (browsers, known) => {
   return dates
 }
 
-const appBrowsers = results.find(({ service }) => service.id === 'app')?.result.version?.browsers
-const browserReleases = appBrowsers
-  ? await browserReleaseDates(appBrowsers, history.browserReleases ?? {})
+const browserReleases = liveVersion
+  ? await browserReleaseDates(liveVersion.browsers, history.browserReleases ?? {})
   : (history.browserReleases ?? {})
 
 const lines = [
