@@ -79,6 +79,7 @@ const browserReleases = appBrowsers
 const lines = [
   '{',
   `  "updatedAt": ${JSON.stringify(now.toISOString())},`,
+  `  "lastCheck": ${JSON.stringify(Object.fromEntries(results.map(({ service, result }) => [service.id, result.ok])))},`,
   '  "days": {',
   Object.entries(days)
     .map(([key, entry]) => `    ${JSON.stringify(key)}: ${JSON.stringify(entry)}`)
