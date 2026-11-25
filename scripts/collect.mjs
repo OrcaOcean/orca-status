@@ -37,11 +37,17 @@ const days = Object.fromEntries(
 )
 
 const liveVersion = results.find(({ service }) => service.id === 'app')?.result.version
-const isNewRelease = liveVersion !== undefined && liveVersion.workflowId !== history.releases[0]?.id
+const [lastRelease, ...earlierReleases] = history.releases
+const liveCommit = liveVersion?.commit?.hash
+const isNewRelease = liveVersion !== undefined && liveVersion.workflowId !== lastRelease?.id
+// Releases recorded before the collector stored commits get the commit once they're seen live.
+const isLastReleaseMissingCommit = !isNewRelease && liveVersion !== undefined && !lastRelease.commit && liveCommit
 const releases = (
   isNewRelease
-    ? [{ id: liveVersion.workflowId, commit: liveVersion.commit.hash, at: now.toISOString() }, ...history.releases]
-    : history.releases
+    ? [{ id: liveVersion.workflowId, commit: liveCommit, at: now.toISOString() }, ...history.releases]
+    : isLastReleaseMissingCommit
+      ? [{ ...lastRelease, commit: liveCommit }, ...earlierReleases]
+      : history.releases
 ).slice(0, MAX_RELEASES)
 
 const browserReleaseDates = async (browsers, known) => {
@@ -73,7 +79,7 @@ const browserReleaseDates = async (browsers, known) => {
   return dates
 }
 
-const browserReleases = liveVersion
+const browserReleases = liveVersion?.browsers
   ? await browserReleaseDates(liveVersion.browsers, history.browserReleases ?? {})
   : (history.browserReleases ?? {})
 

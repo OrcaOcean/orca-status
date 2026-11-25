@@ -270,7 +270,7 @@ const renderRelease = (history, appVersion) => {
   }
 
   const date = new Date(isLatestLive ? latest.at : builtAt)
-  const hash = isLatestLive ? latest.commit : appVersion?.commit?.hash
+  const hash = (isLatestLive && latest.commit) || appVersion?.commit?.hash
   byId('release-date').textContent = longDate.format(date)
   byId('release-note').replaceChildren(
     ...(hash ? ['Version ', el('span', 'mono', shortHash(hash)), ' · '] : []),
