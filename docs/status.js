@@ -48,6 +48,8 @@ const clock = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-dig
 const relativeTime = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 const list = new Intl.ListFormat('en-GB', { type: 'conjunction' })
 
+const shortHash = (hash) => hash.slice(0, 10)
+
 const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
 
 const relativeDay = (date) =>
@@ -268,17 +270,26 @@ const renderRelease = (history, appVersion) => {
   }
 
   const date = new Date(isLatestLive ? latest.at : builtAt)
+  const hash = (isLatestLive && latest.commit) || appVersion?.commit?.hash
   byId('release-date').textContent = longDate.format(date)
-  byId('release-note').textContent = isLatestLive
-    ? `Went live ${relativeDay(date)} at ${clock.format(date)}`
-    : `The version you get now was built ${relativeDay(date)}`
+  byId('release-note').replaceChildren(
+    ...(hash ? ['Version ', el('span', 'mono', shortHash(hash)), ' · '] : []),
+    isLatestLive
+      ? `${hash ? 'went' : 'Went'} live ${relativeDay(date)} at ${clock.format(date)}`
+      : `${hash ? 'built' : 'Built'} ${relativeDay(date)}`,
+  )
 
   const earlier = (isLatestLive ? releases.slice(1) : releases).slice(0, SHOWN_EARLIER_RELEASES)
   byId('releases').replaceChildren(
     ...earlier.map((release) => {
       const at = new Date(release.at)
       const item = el('li')
-      item.append(el('span', '', shortDate.format(at)), el('span', 'row-secondary', relativeDay(at)))
+      item.append(
+        el('span', '', shortDate.format(at)),
+        release.commit
+          ? el('span', 'row-secondary mono', shortHash(release.commit))
+          : el('span', 'row-secondary', relativeDay(at)),
+      )
       return item
     }),
   )
