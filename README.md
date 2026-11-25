@@ -12,11 +12,11 @@
 The page is made of static files with no build step and no dependencies.
 
 - **Live status.** The visitor's browser requests `version.json` from each production service every minute. A service that answers is operational.
-- **Publishing.** The `Publish status page` workflow runs on every push to `main` and every 30 minutes. It copies `docs/` to the `pages` branch and keeps the `data/history.json` already there.
+- **Publishing.** The `Publish status page` workflow runs on every push to `main` and every 10 minutes. It copies `docs/` to the `pages` branch and keeps the `data/history.json` already there.
 - **History.** On each run the workflow also runs `scripts/collect.mjs`, which makes the same requests and records the result in `data/history.json` on `pages`: passed and failed checks per day for the last 90 days. A check only fails after three attempts.
 - **Updates.** When the collector sees a new version on production, it adds the time to `releases` in the same file. `scripts/history.seed.json` is the starting point used when `pages` has no history yet; its dates come from the `release-*` tags of the `orca` repository.
 - **Supported browsers.** The minimum versions come from production's `version.json`, so they change with each release. The collector stores when each of those versions came out in `browserReleases`, looked up once per version in [MDN's browser data](https://github.com/mdn/browser-compat-data/tree/main/browsers). Brave uses Chrome's dates, since it follows Chromium's version numbers.
-- **Blocked networks.** The collector also stores the result of its latest check in `lastCheck`. When a visitor's browser can't reach a service that this check reached within the last hour, the page says their network is probably blocking it, rather than reporting Orca as down.
+- **Blocked networks.** The collector also stores the result of its latest check in `lastCheck`. When a visitor's browser can't reach a service that this check reached within the last 30 minutes, the page says their network is probably blocking it, rather than reporting Orca as down.
 
 The services and their addresses are listed once, in `docs/lib.js`.
 
