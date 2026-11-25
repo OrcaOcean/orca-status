@@ -1,9 +1,9 @@
 import { HISTORY_DAYS, SERVICES, browserReleaseKey, dayStatus, lastDayKeys, probe } from './lib.js'
 
 const RECHECK_MS = 60_000
-const HISTORY_RELOAD_MS = 15 * 60_000
-// Scheduled checks run every 30 minutes and GitHub often starts them a few minutes late.
-const LAST_CHECK_MAX_AGE_MS = 60 * 60_000
+const HISTORY_RELOAD_MS = 5 * 60_000
+// Scheduled checks run every 10 minutes and GitHub often starts them a few minutes late.
+const LAST_CHECK_MAX_AGE_MS = 30 * 60_000
 const SHOWN_EARLIER_RELEASES = 5
 const DAY_MS = 86_400_000
 
