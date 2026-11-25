@@ -29,4 +29,6 @@ cp scripts/history.seed.json /tmp/history.json
 node scripts/collect.mjs /tmp/history.json
 ```
 
+Pull requests that change the page show before/after screenshots, taken with `scripts/screenshot.mjs` (see `AGENTS.md`). It's the repo's only dependency, Playwright, and only runs locally.
+
 Moving the pages to another address (for example `status.withorca.com`) needs that origin added to the `version.json` CORS rules in the `orca` repository.
