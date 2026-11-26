@@ -317,7 +317,7 @@ const check = async () => {
   }
   isChecking = true
   try {
-    const results = await Promise.all(SERVICES.map((service) => probe(service.urls.production)))
+    const results = await Promise.all(SERVICES.map((service) => probe(service.statusUrl)))
     lastCheckAt = Date.now()
     const failed = SERVICES.filter((_, index) => !results[index].ok)
     const time = clock.format(new Date())
@@ -333,14 +333,20 @@ const check = async () => {
     }
     const automatedCheckAt = new Date(history?.updatedAt)
     const isLastCheckRecent = Date.now() - automatedCheckAt.getTime() < LAST_CHECK_MAX_AGE_MS
-    const blocked = failed.filter((service) => isLastCheckRecent && history.lastCheck?.[service.id] === true)
+    // A service that answered with an error isn't blocked by the visitor's network.
+    const blocked = failed.filter(
+      (service) =>
+        isLastCheckRecent &&
+        history.lastCheck?.[service.id] === true &&
+        !results[SERVICES.indexOf(service)].reached,
+    )
 
     SERVICES.forEach((service, index) =>
       setServiceState(service.id, results[index].ok ? 'ok' : blocked.includes(service) ? 'blocked' : 'down'),
     )
 
     if (failed.length > 0 && blocked.length === failed.length) {
-      const hosts = list.format(blocked.map((service) => new URL(service.urls.production).host))
+      const hosts = list.format(blocked.map((service) => new URL(service.statusUrl).host))
       const advice = `A VPN, firewall or proxy is probably blocking ${hosts}. Ask your IT team to allow ${blocked.length === 1 ? 'it' : 'them'}.`
       setOverall(
         'partial',

@@ -17,7 +17,7 @@ const history = JSON.parse(await readFile(HISTORY_FILE, 'utf8'))
 const results = await Promise.all(
   SERVICES.map(async (service) => ({
     service,
-    result: await probe(service.urls.production, { attempts: 3, retryDelayMs: 5000 }),
+    result: await probe(service.statusUrl, { attempts: 3, retryDelayMs: 5000 }),
   })),
 )
 
