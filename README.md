@@ -11,7 +11,7 @@
 
 The page is made of static files with no build step and no dependencies.
 
-- **Live status.** The visitor's browser requests `version.json` from each production service every minute. A service that answers is operational.
+- **Live status.** The visitor's browser requests `version.json` from each production service every minute. A service that answers is operational. Sonar has no public address, so the API answers for it at `/sonar/status.json`, with an error while scans have waited over 30 minutes.
 - **Publishing.** The `Publish status page` workflow runs on every push to `main` and every 10 minutes. It copies `docs/` to the `pages` branch and keeps the `data/history.json` already there.
 - **History.** On each run the workflow also runs `scripts/collect.mjs`, which makes the same requests and records the result in `data/history.json` on `pages`: passed and failed checks per day for the last 90 days. A check only fails after three attempts.
 - **Updates.** When the collector sees a new version on production, it adds the time to `releases` in the same file. `scripts/history.seed.json` is the starting point used when `pages` has no history yet; its dates come from the `release-*` tags of the `orca` repository.

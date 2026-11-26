@@ -5,53 +5,54 @@ export const SERVICES = [
     id: 'app',
     name: 'Web app',
     description: 'Opening Orca in your browser',
-    urls: {
-      production: 'https://app.withorca.com',
-    },
+    statusUrl: 'https://app.withorca.com/version.json',
   },
   {
     id: 'api',
     name: 'API',
     description: 'Signing in, saving and sharing your data',
-    urls: {
-      production: 'https://api.withorca.com',
-    },
+    statusUrl: 'https://api.withorca.com/version.json',
   },
   {
     id: 'email',
     name: 'Email import',
     description: 'Sending files to Orca by email',
-    urls: {
-      production: 'https://imap.withorca.com',
-    },
+    statusUrl: 'https://imap.withorca.com/version.json',
+  },
+  {
+    id: 'sonar',
+    name: 'Sonar',
+    description: 'Extracting data from the documents you upload',
+    // The API answers for Sonar, which has no public address, and fails while scans wait too long.
+    statusUrl: 'https://api.withorca.com/sonar/status.json',
   },
 ]
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const probeOnce = async (baseUrl, timeoutMs) => {
+const probeOnce = async (url, timeoutMs) => {
   const startedAt = performance.now()
   try {
-    const response = await fetch(`${baseUrl}/version.json`, {
+    const response = await fetch(url, {
       cache: 'no-store',
       signal: AbortSignal.timeout(timeoutMs),
     })
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
+      return { ok: false, reached: true, reason: `HTTP ${response.status}` }
     }
     const version = await response.json()
     return { ok: true, ms: Math.round(performance.now() - startedAt), version }
   } catch (error) {
-    return { ok: false, reason: error instanceof Error ? error.message : String(error) }
+    return { ok: false, reached: false, reason: error instanceof Error ? error.message : String(error) }
   }
 }
 
 // A single failed request is usually a network blip, so a service only counts as down after every attempt failed.
-export const probe = async (baseUrl, { attempts = 2, retryDelayMs = 2000, timeoutMs = 10000 } = {}) => {
-  let result = await probeOnce(baseUrl, timeoutMs)
+export const probe = async (url, { attempts = 2, retryDelayMs = 2000, timeoutMs = 10000 } = {}) => {
+  let result = await probeOnce(url, timeoutMs)
   for (let attempt = 1; attempt < attempts && !result.ok; attempt++) {
     await wait(retryDelayMs)
-    result = await probeOnce(baseUrl, timeoutMs)
+    result = await probeOnce(url, timeoutMs)
   }
   return result
 }
